@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kudos Feed</title>
+    <style>
+        body{font-family:Segoe UI,Arial,Helvetica,sans-serif;max-width:900px;margin:24px auto;padding:0 16px}
+        header{display:flex;justify-content:space-between;align-items:center}
+        #feed{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+        .kudo{padding:12px;border:1px solid #e1e1e1;border-radius:6px;background:#fff}
+        .muted{color:#666;font-size:.95rem}
+        a.button{background:#0078d4;color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Kudos Feed</h1>
+        <nav>
+            <a class="button" href="kudos_form.html">Give Kudos</a>
+        </nav>
+    </header>
+
+    <div class="muted">Recent kudos appear below. Click a card to view details.</div>
+
+    <div id="feed">Loading…</div>
+
+    <script>
+        async function loadFeed(){
+            const el = document.getElementById('feed');
+            el.textContent = 'Loading…';
+            try{
+                const res = await fetch('/kudos/');
+                if(!res.ok) throw new Error(res.status);
+                const data = await res.json();
+                if(!Array.isArray(data) || data.length===0){
+                    el.innerHTML = '<div class="muted">No kudos yet.</div>';
+                    return;
+                }
+                el.innerHTML = '';
+                data.reverse().forEach(k => {
+                    const d = document.createElement('div');
+                    d.className = 'kudo';
+                    d.innerHTML = `<div><strong>From:</strong> ${escapeHtml(k.sender_id)} &nbsp; <strong>To:</strong> ${escapeHtml(k.recipient_id)}</div>
+                                                 <div style="margin-top:8px">${escapeHtml(k.message)}</div>`;
+                    el.appendChild(d);
+                });
+            }catch(err){
+                el.innerHTML = '<div class="muted">Unable to load kudos.</div>';
+                console.error(err);
+            }
+        }
+
+        function escapeHtml(s){
+            if(s===null||s===undefined) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        window.addEventListener('load', ()=>{
+            loadFeed();
+            // refresh every 20 seconds
+            setInterval(loadFeed,20000);
+        });
+    </script>
+</body>
+</html>
